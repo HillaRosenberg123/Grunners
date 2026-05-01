@@ -1,0 +1,2117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Grunner — Grüns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark-green: #0a3d1f;
+    --page-green: #007E40;
+    --mid-green: #2d7a45;
+    --light-mint: #e8f5e2;
+    --yellow: #FFD200;
+    --title-yellow: #FFCC2F;
+    --white: #ffffff;
+    --dark: #1a1a1a;
+    --muted: #666666;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page-green);
+    font-family: "Work Sans", system-ui, sans-serif;
+    color: var(--dark);
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  /* ===== Page decorative bear mascots — frame the game card ===== */
+  .page-deco {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .deco-bear {
+    position: absolute;
+    width: auto;
+    opacity: 0.92;
+    filter: drop-shadow(0 4px 0 rgba(0,0,0,0.10));
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .deco-bear--tl { top: 28px;    left: 36px;   height: 72px; transform: rotate(-12deg); }
+  .deco-bear--tr { top: 64px;    right: 44px;  height: 80px; transform: rotate(8deg); }
+  .deco-bear--ml { top: 50%;     left: 32px;   height: 100px; transform: translateY(-50%) rotate(6deg); }
+  .deco-bear--mr { top: 50%;     right: 28px;  height: 100px; transform: translateY(-50%) rotate(-8deg); }
+  .deco-bear--bl { bottom: 36px; left: 60px;   height: 76px; transform: rotate(12deg); }
+  .deco-bear--br { bottom: 30px; right: 80px;  height: 86px; transform: rotate(-10deg); }
+
+  /* Responsive: drop side bears on medium screens, hide all on small screens */
+  @media (max-width: 1200px) {
+    .deco-bear--ml, .deco-bear--mr { display: none; }
+    .deco-bear--tl, .deco-bear--bl { height: 60px; }
+    .deco-bear--tr, .deco-bear--br { height: 66px; }
+  }
+  @media (max-width: 900px) {
+    .deco-bear { display: none; }
+  }
+
+  .page-title {
+    position: relative;
+    z-index: 2;
+    font-size: 72px;
+    font-weight: 800;
+    color: var(--title-yellow);
+    letter-spacing: 1px;
+    margin: 0 0 18px 0;
+    text-align: center;
+  }
+  .game-box {
+    position: relative;
+    z-index: 2;
+    width: 840px;
+    max-width: 100%;
+    height: 460px;
+    border-radius: 16px;
+    overflow: visible;
+    border: 2px solid #000;
+    box-shadow: 4px 4px 0 0 #000;
+    background: var(--light-mint);
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 280ms ease;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ===== Shared Buttons ===== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    letter-spacing: 0.3px;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: var(--mid-green);
+    color: var(--white);
+    box-shadow: 0 6px 0 #1f5a32, 0 10px 22px rgba(0,0,0,0.18);
+  }
+  .btn-primary:hover { background: #2f8a4d; }
+  .btn-yellow {
+    background: var(--yellow);
+    color: var(--dark);
+    box-shadow: 0 6px 0 #c9a700, 0 10px 22px rgba(0,0,0,0.18);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--mid-green);
+    border: 2px solid var(--mid-green);
+  }
+  .btn-outline:hover { background: rgba(45,122,69,0.08); }
+
+  /* ===== Scenic background (CSS layered) ===== */
+  .scene-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(#dff3d4 0%, #e8f5e2 55%, #cfe9bd 100%);
+    overflow: hidden;
+  }
+  .clouds {
+    position: absolute;
+    top: 30px;
+    left: 0; right: 0;
+    height: 80px;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .cloud {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 22px 0 0 6px #fff, -22px 0 0 4px #fff, 44px 6px 0 0 #fff, -38px 4px 0 -2px #fff;
+    width: 40px; height: 22px;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.04));
+  }
+  .hills {
+    position: absolute;
+    bottom: 80px;
+    left: -10%;
+    right: -10%;
+    height: 200px;
+    background:
+      radial-gradient(ellipse 260px 110px at 18% 100%, #3a8f55 0 60%, transparent 61%),
+      radial-gradient(ellipse 320px 130px at 50% 100%, #2d7a45 0 60%, transparent 61%),
+      radial-gradient(ellipse 280px 120px at 82% 100%, #3a8f55 0 60%, transparent 61%);
+    background-repeat: no-repeat;
+  }
+  .ground {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 80px;
+    background: linear-gradient(#2d7a45, #226135);
+    border-top: 4px solid #1f5a32;
+  }
+  .ground::before {
+    content:"";
+    position: absolute;
+    top: 6px; left: 0; right: 0; height: 6px;
+    background-image: radial-gradient(circle, #FFD200 2px, transparent 3px);
+    background-size: 40px 6px;
+    opacity: 0.6;
+  }
+
+  /* Scrolling animations on Start screen */
+  .scrolling .clouds { animation: cloudScroll 60s linear infinite; }
+  .scrolling .hills  { animation: hillScroll 30s linear infinite; }
+  .scrolling .ground { background-position-x: 0; }
+  @keyframes cloudScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-200px); }
+  }
+  @keyframes hillScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100px); }
+  }
+
+  /* ===== Screen 1 — Start ===== */
+  #screen-start { background: #ffffff; padding: 0; }
+  .start-scene {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .start-ground {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 70px;
+    height: 3px;
+    background: #2d7a45;
+  }
+  .start-bear-preview {
+    position: absolute;
+    left: 160px;
+    bottom: 73px;
+    width: 56px;
+    height: 60px;
+    display: block;
+  }
+  .start-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 44, 23, 0.85);
+    display: flex;
+    align-items: stretch;
+    padding: 70px 48px;
+    z-index: 2;
+  }
+  .start-content {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  #gameBox > .start-logo {
+    position: absolute;
+    bottom: -40px;
+    left: -40px;
+    height: 120px;
+    width: auto;
+    display: block;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 280ms ease;
+  }
+  #gameBox > #screen-start.active ~ .start-logo {
+    opacity: 1;
+  }
+  .start-content .start-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.3;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .start-content .start-cta {
+    background: #007E40;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 700;
+    min-width: 380px;
+    min-height: 70px;
+    padding: 14px 40px;
+    border: 2px solid #000000;
+    border-radius: 50px;
+    box-shadow: 4px 4px 0 0 #000000;
+  }
+  .start-content .start-cta:hover {
+    background: #007E40;
+    transform: translateY(-1px);
+  }
+  .start-content .start-sub {
+    margin: 0;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .start-content .start-sub .star {
+    color: #FFCC2F;
+    margin: 0 8px;
+  }
+
+  /* ===== Screen 2 — Recipe ===== */
+  #screen-mission {
+    background-color: #DAECE3;
+    padding: 44px 32px 32px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #screen-mission .recipe-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--dark);
+    text-align: center;
+    letter-spacing: 0.2px;
+  }
+  #screen-mission .recipe-sub {
+    text-align: center;
+    color: #007E40;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .recipe-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .recipe-split {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .recipe-benefits-divider {
+    width: 100%;
+    border: none;
+    border-top: 1px solid #E0E0E0;
+    margin: 0;
+  }
+  .recipe-benefits-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 28px;
+  }
+  .recipe-benefit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #2d7a45;
+  }
+  .recipe-benefit .rb-icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+  }
+  .recipe-benefit .rb-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+  }
+  .recipe-benefit .rb-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888888;
+    letter-spacing: 0.2px;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .recipe-bear-col {
+    display: grid;
+    place-items: center;
+  }
+  .recipe-bear {
+    height: 120px;
+    width: auto;
+    display: block;
+    pointer-events: none;
+  }
+  .recipe-divider {
+    width: 1px;
+    align-self: stretch;
+    background: #007E40;
+  }
+  .recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 44px);
+    grid-auto-rows: 44px;
+    gap: 12px;
+  }
+  .recipe-ing {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #FFFACB;
+    border: none;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    line-height: 1;
+  }
+  #screen-mission .cta-row {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+  }
+  #btn-mission-go {
+    background: #007E40;
+    color: #ffffff;
+    font-weight: 700;
+    border: 2px solid #000000;
+    border-radius: 50px;
+    box-shadow: 4px 4px 0 0 #000000;
+    min-width: 320px;
+  }
+  #btn-mission-go:hover {
+    background: #007E40;
+    transform: translateY(-1px);
+  }
+
+  /* ===== Screen 3 — Game ===== */
+  #screen-game {
+    padding: 0;
+  }
+  /* ===== Benefit unlock popup ===== */
+  .unlock-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+  }
+  .unlock-popup.show {
+    animation: unlockPop 1.2s ease-out forwards;
+  }
+  @keyframes unlockPop {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    32%  { transform: translate(-50%, -50%) scale(1); }
+    78%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+  .unlock-circle {
+    width: 80px;
+    height: 80px;
+    background: #FFCC2F;
+    border: 2px solid #000000;
+    border-radius: 50%;
+    box-shadow: 4px 4px 0 0 #000000;
+    display: grid;
+    place-items: center;
+    color: #1a1a1a;
+  }
+  .unlock-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    color: inherit;
+  }
+  .unlock-icon svg {
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    display: block;
+  }
+  .unlock-name {
+    background: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+    font-size: 16px;
+    box-shadow: 4px 4px 0 0 #000000;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  #gameCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+    border-radius: 14px;
+  }
+  .hud {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .hud-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hud-bear {
+    width: auto;
+    height: 48px;
+    display: block;
+    flex: none;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .hud-divider {
+    width: 1px;
+    align-self: stretch;
+    background: #E0E0E0;
+    flex: none;
+  }
+
+  /* ===== Top Panel — Benefit Progress Tracker ===== */
+  .benefit-tracker {
+    background: transparent;
+    border: none;
+    border-radius: 16px;
+    padding: 10px 22px;
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    box-shadow: none;
+  }
+  .slot {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    color: rgba(45, 122, 69, 0.25);
+    transition: color 240ms ease;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+  .slot .slot-icon {
+    position: relative;
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+  }
+  .slot .slot-icon svg { width: 100%; height: 100%; display: block; color: inherit; }
+  .slot .slot-name {
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.1;
+    color: inherit;
+    letter-spacing: 0.3px;
+  }
+  .slot.active { color: var(--mid-green); }
+  .slot.done   { color: var(--mid-green); }
+  .slot.active .slot-icon::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid var(--mid-green);
+    opacity: 0.7;
+    animation: pulseRing 1.6s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pulseRing {
+    0%   { transform: scale(0.85); opacity: 0.7; }
+    70%  { transform: scale(1.45); opacity: 0; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+  .slot .check {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 12px; height: 12px;
+    background: transparent;
+    color: #FFCC2F;
+    border: none;
+    border-radius: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 0 1px rgba(0,0,0,0.35);
+    pointer-events: none;
+  }
+  .slot.done .check { display: flex; }
+  .slot.bump { animation: pillBump 360ms ease; }
+
+  /* ===== Ground-strip ingredient indicator ===== */
+  .ingredient-strip {
+    position: absolute;
+    left: 12px; right: 12px;
+    bottom: 22px;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .ing-target {
+    background: #ffffff;
+    border: 1.5px solid rgba(0,0,0,0.15);
+    border-radius: 999px;
+    padding: 2px 10px 2px 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    line-height: 1;
+    color: var(--dark);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  }
+  .ing-target .circle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #FFFACB;
+    display: grid; place-items: center;
+    font-size: 12px;
+    line-height: 1;
+  }
+  .ing-target .ing-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .pills {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .pill {
+    background: rgba(255,255,255,0.85);
+    color: #999;
+    border: 2px solid rgba(0,0,0,0.06);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease, transform 240ms ease;
+  }
+  .pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #c9c9c9;
+    transition: background 200ms ease, box-shadow 200ms ease;
+  }
+  .pill.lit {
+    background: var(--yellow);
+    color: var(--dark);
+    border-color: #c9a700;
+    transform: translateY(-1px);
+  }
+  .pill.lit .dot {
+    background: var(--mid-green);
+    box-shadow: 0 0 0 3px rgba(45,122,69,0.25);
+  }
+  .pill .count {
+    display: none;
+    background: rgba(0,0,0,0.08);
+    color: var(--dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 2px;
+    letter-spacing: 0.3px;
+  }
+  .pill .count.show { display: inline-block; }
+  .pill.lit .count { display: none !important; }
+  .pill.bump { animation: pillBump 320ms ease; }
+  @keyframes pillBump {
+    0%   { transform: translateY(-1px) scale(1); }
+    35%  { transform: translateY(-3px) scale(1.08); }
+    100% { transform: translateY(-1px) scale(1); }
+  }
+  .score {
+    background: rgba(10,61,31,0.85);
+    color: var(--yellow);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+  .tap-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 600ms ease;
+  }
+  .tap-hint.hide { opacity: 0; }
+
+  /* ===== Screen 4 — Game Over ===== */
+  #screen-over {
+    background: transparent;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .over-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 44, 23, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    padding: 24px;
+  }
+  .over-card {
+    position: relative;
+    background: #FFFACB;
+    border: 2px solid #000000;
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 0 #000000;
+    padding: 36px 40px;
+    width: 480px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+  .over-card .card-deco {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #FFFACB;
+    border: none;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    line-height: 1;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .over-label {
+    background: #007E40;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .over-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.2;
+  }
+  .over-benefits {
+    display: flex;
+    gap: 18px;
+    margin: 4px 0;
+  }
+  .ob-item {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    color: #c9c9c9;
+    transition: color 200ms ease;
+  }
+  .ob-item.done { color: #2d7a45; }
+  .ob-item .ob-icon { width: 36px; height: 36px; display: grid; place-items: center; }
+  .ob-item .ob-icon svg { width: 100%; height: 100%; color: inherit; display: block; }
+  .ob-item .ob-star {
+    position: absolute;
+    top: -4px; right: -6px;
+    width: 14px;
+    height: 14px;
+    color: #FFCC2F;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 1px rgba(0,0,0,0.35);
+    pointer-events: none;
+  }
+  .ob-item.done .ob-star { display: flex; }
+  .over-subtext {
+    margin: 0;
+    color: #000000;
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 380px;
+  }
+  .over-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .over-cta, .over-cta-outline {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 120ms ease, background 120ms ease;
+  }
+  .over-cta {
+    background: #007E40;
+    color: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 0 #000000;
+  }
+  .over-cta:hover { background: #007E40; transform: translateY(-1px); }
+  .over-cta-outline {
+    background: transparent;
+    color: #007E40;
+    border: 2px solid #007E40;
+  }
+  .over-cta-outline:hover { background: rgba(0,126,64,0.08); transform: translateY(-1px); }
+
+  /* ===== Screen 5 — Win (popup overlay over frozen game scene) ===== */
+  #screen-win {
+    background: transparent;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .win-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 44, 23, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    padding: 12px;
+  }
+  .win-card {
+    position: relative;
+    background: #FFFACB;
+    border: 2px solid #000000;
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 0 #000000;
+    padding: 40px 48px 38px;
+    width: 540px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    text-align: center;
+  }
+  .win-card .card-deco {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #FFFACB;
+    border: none;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    line-height: 1;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .win-label {
+    background: #007E40;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .win-title {
+    margin: 4px 0 0 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+    max-width: 460px;
+  }
+  .win-trophy {
+    height: 110px;
+    width: auto;
+    display: block;
+    margin: -2px auto 0;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,0.10));
+  }
+  .win-benefits {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    margin: 4px 0;
+  }
+  .wb-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: #2d7a45;
+    width: 72px;
+  }
+  .wb-item .wb-icon {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+  }
+  .wb-item .wb-icon svg {
+    width: 30px;
+    height: 30px;
+    color: inherit;
+    display: block;
+  }
+  .wb-item .wb-star {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    color: #FFCC2F;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    text-shadow: 0 0 1px rgba(0,0,0,0.35);
+  }
+  .wb-item .wb-name {
+    font-size: 9px;
+    font-weight: 700;
+    color: #2d7a45;
+    text-align: center;
+    line-height: 1.1;
+    letter-spacing: 0.2px;
+  }
+  .win-coupon {
+    background: #007E40;
+    border-radius: 14px;
+    padding: 14px 18px 12px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .win-pct {
+    font-size: 34px;
+    font-weight: 800;
+    color: #FFD200;
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  .win-pct-sub {
+    font-size: 12px;
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .win-code-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .win-code {
+    background: rgba(255,255,255,0.12);
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1.5px dashed #ffffff;
+    font-size: 13px;
+  }
+  .win-copy-btn {
+    background: #FFD200;
+    color: #1a1a1a;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+  .win-copy-btn:hover { background: #ffe05c; transform: translateY(-1px); }
+  .win-sub {
+    margin: 4px 0 0 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #007E40;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .win-cta {
+    background: #007E40;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 34px;
+    border: 2px solid #000000;
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 0 #000000;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    transition: transform 120ms ease;
+  }
+  .win-cta:hover { transform: translateY(-1px); }
+  .win-note {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #666666;
+  }
+  #confettiCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 3;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-deco" aria-hidden="true">
+  <img class="deco-bear deco-bear--tl" src="icons/Gruny.png" alt="" />
+  <img class="deco-bear deco-bear--tr" src="icons/Gruny.png" alt="" />
+  <img class="deco-bear deco-bear--ml" src="icons/Gruny.png" alt="" />
+  <img class="deco-bear deco-bear--mr" src="icons/Gruny.png" alt="" />
+  <img class="deco-bear deco-bear--bl" src="icons/Gruny.png" alt="" />
+  <img class="deco-bear deco-bear--br" src="icons/Gruny.png" alt="" />
+</div>
+
+<h1 class="page-title">Grünner</h1>
+
+<div class="game-box" id="gameBox">
+
+  <!-- Always-visible game canvas — runs preview behind start screen, real game during play, frozen state behind game-over -->
+  <canvas id="gameCanvas" width="840" height="460"></canvas>
+
+  <!-- ===== Screen 1 — Start ===== -->
+  <section class="screen active" id="screen-start">
+    <!-- Semi-transparent dark green overlay -->
+    <div class="start-overlay">
+      <div class="start-content">
+        <h1 class="start-title">Build a Grüns, one superfood at a time</h1>
+        <button class="btn btn-primary start-cta" id="btn-start">Start Game</button>
+        <p class="start-sub"><span class="star">★</span>Collect ingredients and unlock the superpowers to get 15% off your next subscription pack<span class="star">★</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 2 — Recipe ===== -->
+  <section class="screen" id="screen-mission">
+    <p class="recipe-sub">Collect these ingredients to unlock superpowers<br>and build a Grüns:</p>
+
+    <div class="recipe-section">
+      <div class="recipe-split">
+        <div class="recipe-bear-col">
+          <img class="recipe-bear" src="icons/Gruns.png" alt="" aria-hidden="true" />
+        </div>
+        <div class="recipe-divider" aria-hidden="true"></div>
+        <div class="recipe-grid">
+          <div class="recipe-ing">🦠</div>
+          <div class="recipe-ing">🥦</div>
+          <div class="recipe-ing">🍇</div>
+          <div class="recipe-ing">💊</div>
+          <div class="recipe-ing">🌿</div>
+          <div class="recipe-ing">🛡️</div>
+          <div class="recipe-ing">🧠</div>
+          <div class="recipe-ing">🍄</div>
+          <div class="recipe-ing">🍓</div>
+          <div class="recipe-ing">🥬</div>
+          <div class="recipe-ing">🌿</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary" id="btn-mission-go">Let's Go</button>
+    </div>
+  </section>
+
+  <!-- ===== Screen 3 — Game ===== -->
+  <section class="screen" id="screen-game">
+    <div class="hud">
+      <div class="hud-left">
+        <img class="hud-bear" src="icons/Gruns.png" alt="" aria-hidden="true" />
+        <span class="hud-divider" aria-hidden="true"></span>
+        <div class="benefit-tracker" id="benefit-tracker"></div>
+      </div>
+      <div class="score" id="score" style="display:none">Score: 0</div>
+    </div>
+
+    <div class="ingredient-strip" id="ingredient-strip"></div>
+
+  </section>
+
+  <!-- ===== Screen 4 — Game Over ===== -->
+  <section class="screen" id="screen-over">
+    <div class="over-overlay">
+      <div class="over-card">
+        <span class="card-deco" style="top:12px;    left:12px;">🥦</span>
+        <span class="card-deco" style="top:12px;    right:12px;">🍓</span>
+        <span class="card-deco" style="bottom:12px; left:12px;">🌿</span>
+        <span class="card-deco" style="bottom:12px; right:12px;">🍄</span>
+
+        <h2 class="over-title">Game Over</h2>
+        <p class="over-subtext">Oops! You tripped on a generic multivitamin.</p>
+        <div class="over-buttons">
+          <button class="over-cta" id="btn-try-again">Try Again</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 5 — Win ===== -->
+  <section class="screen" id="screen-win">
+    <canvas id="confettiCanvas" width="840" height="460"></canvas>
+    <div class="win-overlay">
+      <div class="win-card">
+        <span class="card-deco" style="top:16px;    left:16px;">🥦</span>
+        <span class="card-deco" style="top:16px;    right:16px;">🍓</span>
+        <span class="card-deco" style="bottom:16px; left:16px;">🍄</span>
+        <span class="card-deco" style="bottom:16px; right:16px;">🌿</span>
+
+        <h2 class="win-title">You built a Grüns!</h2>
+        <img class="win-trophy" src="icons/Gruny.png" alt="" aria-hidden="true" />
+        <div class="win-benefits" id="win-benefits"></div>
+        <a class="win-cta" href="https://gruns.co" target="_blank" rel="noopener">Claim 15% off next subscription pack</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="unlock-popup" id="unlock-popup" aria-hidden="true">
+    <div class="unlock-circle">
+      <div class="unlock-icon"></div>
+    </div>
+    <div class="unlock-name"></div>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  // ===== State =====
+  const SCREENS = ["start", "mission", "game", "over", "win"];
+  const screenEls = {
+    start:   document.getElementById("screen-start"),
+    mission: document.getElementById("screen-mission"),
+    game:    document.getElementById("screen-game"),
+    over:    document.getElementById("screen-over"),
+    win:     document.getElementById("screen-win"),
+  };
+  function show(name) {
+    SCREENS.forEach(s => screenEls[s].classList.toggle("active", s === name));
+    if (name === "win") fireConfetti();
+    if (name !== "win") stopConfetti();
+    if (name === "start") startPreviewLoop();
+  }
+
+  // Preview loop: runs a simplified live game scene behind the start screen overlay.
+  // Bear runs, ground scrolls, and ingredients + obstacles spawn and pass through (no collision).
+  let previewRAF = 0;
+  function startPreviewLoop() {
+    cancelAnimationFrame(previewRAF);
+    // fresh preview state — these are reset by startGame() too, so no leak into a real game
+    game.items = [];
+    game.spawnDistance = 100;
+    game.nextSpawnType = "ing";
+    function tick() {
+      if (game.running) return; // real game loop is taking over
+      if (!screenEls.start.classList.contains("active")) return; // only on start screen
+
+      const speed = 8.0;
+
+      // bear stays grounded and "running"
+      game.bear.runFrame += 1;
+      game.bear.onGround = true;
+      game.bear.y = GROUND_Y - game.bear.h;
+      game.bear.vy = 0;
+
+      // world scroll
+      game.groundScroll += speed;
+
+      // strict alternating spawn (no collision in preview)
+      game.spawnDistance -= speed;
+      if (game.spawnDistance <= 0) {
+        if (game.nextSpawnType === "ing") {
+          // random ingredient for visual variety
+          const ing = INGREDIENTS[Math.floor(Math.random() * INGREDIENTS.length)];
+          const size = 42;
+          const y = GROUND_Y - INGREDIENT_HEIGHT - size;
+          game.items.push({
+            type: "ing", ing,
+            x: W + 20, y, w: size, h: size,
+            bobPhase: Math.random() * Math.PI * 2,
+          });
+          game.nextSpawnType = "rock";
+        } else {
+          spawnRock();
+          game.nextSpawnType = "ing";
+        }
+        game.spawnDistance = MIN_SPAWN_DISTANCE + Math.random() * SPAWN_DISTANCE_JITTER;
+      }
+
+      // move and cull items, no collision detection
+      for (const it of game.items) it.x -= speed;
+      game.items = game.items.filter(it => it.x + it.w > -20);
+
+      // render
+      ctx.clearRect(0, 0, W, H);
+      drawBackground();
+      drawHills();
+      for (const it of game.items) {
+        if (it.type === "ing") drawIngredient(it);
+        else drawRock(it);
+      }
+      drawBear();
+
+      previewRAF = requestAnimationFrame(tick);
+    }
+    previewRAF = requestAnimationFrame(tick);
+  }
+
+  document.getElementById("btn-start").addEventListener("click", () => show("mission"));
+  document.getElementById("btn-mission-go").addEventListener("click", () => startGame());
+  document.getElementById("btn-try-again").addEventListener("click", () => startGame());
+
+
+  // ===== Game =====
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const W = 840, H = 460;
+  const GROUND_Y = H - 90; // top of ground (mint band 70px + brown earth 20px = 90px below)
+  const EARTH_H = 20;
+
+  const INGREDIENTS = [
+    { key: "veggies",      emoji: "🥦", group: "energy"   },
+    { key: "fruits",       emoji: "🍇", group: "energy"   },
+    { key: "vitamins",     emoji: "💊", group: "immunity" },
+    { key: "adaptogens",   emoji: "🧠", group: "brain"    },
+    { key: "herbs",        emoji: "🌿", group: "immunity" },
+    { key: "antioxidants", emoji: "🛡️", group: "immunity" },
+    { key: "prebiotics",   emoji: "🦠", group: "gut"      },
+    { key: "mushrooms",    emoji: "🍄", group: "brain"    },
+    { key: "strawberry",   emoji: "🍓", group: "taste"    },
+    { key: "sweetgreens",  emoji: "🥬", group: "taste"    },
+    { key: "fresh",        emoji: "🌿", group: "taste"    },
+  ];
+
+  const BENEFIT_REQS = {
+    gut:      { keys: ["prebiotics"],                          total: 1 },
+    immunity: { keys: ["vitamins", "herbs", "antioxidants"],   total: 3 },
+    brain:    { keys: ["adaptogens", "mushrooms"],             total: 2 },
+    energy:   { keys: ["veggies", "fruits"],                   total: 2 },
+    taste:    { keys: ["strawberry", "sweetgreens", "fresh"],  total: 3 },
+  };
+  const INGREDIENT_TO_BENEFIT = {};
+  for (const [bk, req] of Object.entries(BENEFIT_REQS)) {
+    for (const k of req.keys) INGREDIENT_TO_BENEFIT[k] = bk;
+  }
+  const BENEFIT_ORDER  = ["gut", "energy", "brain", "immunity", "taste"];
+  const BENEFIT_LABELS = {
+    gut: "Gut Health",
+    energy: "Energy & Body",
+    brain: "Brain Health",
+    immunity: "Immunity",
+    taste: "Taste",
+  };
+  const BENEFIT_ICONS = {
+    gut: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M42.0072 26.0005V23.9997C42.0072 16.2645 35.7366 9.99388 28.0014 9.99388H26.0005C24.2318 9.99388 22.7331 8.84738 22.203 7.25672C21.9408 6.46639 21.1265 5.99219 20.2961 5.99219H18.2613C16.9568 5.99219 15.9863 7.22869 16.3125 8.49122C16.9868 11.1063 18.6954 13.3033 20.9724 14.6298C21.5827 14.9859 21.9989 15.5862 21.9989 16.2925C21.9989 19.2917 21.9989 27.173 21.9989 27.173C21.9989 28.7356 20.7323 30.0022 19.1697 30.0022C18.4193 30.0022 17.6991 29.7041 17.1689 29.1738L15.6542 27.6592C14.0235 26.0285 11.4985 25.4963 9.22953 26.5388C7.18869 27.4752 5.99219 29.642 5.99219 31.887V38.0055C5.99219 39.6622 7.33673 41.0067 8.99343 41.0067C10.6501 41.0067 11.9947 39.6622 11.9947 38.0055V34.0039L16.2085 38.2176C18.6355 40.6446 21.9248 42.0072 25.3562 42.0072C34.5521 42.0072 42.0072 34.5521 42.0072 25.3562"/></svg>`,
+    energy: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48"><g><path fill="currentColor" d="M30.4679 27.1331C33.0849 23.2096 38.0042 21.5227 42.4782 23.0145C43.2641 23.2765 43.6887 24.1261 43.4268 24.9119C43.1647 25.6979 42.3151 26.1225 41.5294 25.8605C38.4659 24.8391 35.1103 25.9069 33.1964 28.4681L32.9647 28.7961L32.4327 29.5961C31.9742 30.2859 31.043 30.4733 30.3532 30.0145C29.7262 29.5975 29.5141 28.7901 29.8255 28.1285L29.9347 27.9349L30.4679 27.1331Z"/><path fill="currentColor" d="M21.1718 3.77938C23.126 2.15161 25.9572 2.20248 27.8488 3.84917L28.1124 4.09526L30.9937 6.97637C32.1492 8.13432 32.3894 9.90539 31.618 11.3198L31.4502 11.5976L29.1585 15.0374C28.191 16.4749 26.361 17.0268 24.7753 16.4008L24.4811 16.2696L23.6154 15.836L21.6026 25.8808C21.4533 26.6253 20.7766 27.1298 20.0392 27.0832L19.8369 27.0566C19.0924 26.9074 18.588 26.2306 18.6345 25.4932L18.6612 25.2909L21.0612 13.323C21.2417 12.4228 22.1709 11.9106 23.0108 12.1961L23.2027 12.2763L25.8219 13.5859C26.0778 13.7136 26.3809 13.6616 26.577 13.4735L26.6657 13.3682L28.953 9.9349C29.0994 9.71499 29.0998 9.43448 28.9668 9.2179L28.8712 9.09656L25.9911 6.21646C25.2042 5.4294 23.9471 5.37216 23.0921 6.0843C16.7459 11.3722 11.9384 18.2608 9.16127 26.031L8.83775 26.9675L7.63961 30.5341C7.27852 31.6226 7.61215 32.8107 8.46425 33.5549L8.68793 33.7316L11.7499 35.9193C17.243 39.844 24.3567 40.701 30.6246 38.1931C31.2833 37.9298 32.0252 38.1652 32.417 38.7346L32.5234 38.9152L34.6874 43.2432C35.058 43.9842 34.7576 44.8852 34.0166 45.2555C33.3375 45.5952 32.5238 45.3712 32.1074 44.7608L32.0042 44.5848L30.4374 41.4519L30.4166 41.461C23.7578 43.6601 16.4364 42.6747 10.5858 38.7613L10.0057 38.3604L6.94668 36.1744C4.96451 34.7652 4.07655 32.2838 4.68534 29.9512L4.79396 29.5842L5.99288 26.0155C8.88665 17.3364 14.1431 9.63608 21.1718 3.77938Z"/><path fill="currentColor" d="M17.3675 25.3517C21.8027 22.3958 27.5801 22.3958 32.0153 25.3517C32.7045 25.8111 32.891 26.7423 32.4316 27.4317C31.9721 28.1211 31.0409 28.3075 30.3516 27.8481C26.9237 25.5638 22.4589 25.5638 19.0313 27.8481C18.3419 28.3075 17.4106 28.1211 16.9512 27.4317C16.4917 26.7423 16.6782 25.8111 17.3675 25.3517Z"/></g></svg>`,
+    brain: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M25.2578 7.3069C24.5238 7.9007 23.4747 7.9007 22.7407 7.3069C21.1366 6.02674 18.9896 5.65491 17.0484 6.32103C15.1072 6.98716 13.6409 8.59887 13.1607 10.5943C12.991 11.3706 12.3831 11.9761 11.6061 12.1429C9.32183 12.6065 7.41803 14.1762 6.52747 16.3302C5.63688 18.4841 5.87635 20.94 7.16625 22.8814C7.63102 23.5619 7.63102 24.4578 7.16625 25.1383C5.87635 27.0796 5.63688 29.5355 6.52747 31.6895C7.41803 33.8435 9.32183 35.4131 11.6061 35.8768C12.3831 36.0435 12.991 36.6491 13.1607 37.4254C13.6435 39.419 15.1109 41.0281 17.0517 41.6921C18.9925 42.3561 21.138 41.9829 22.7407 40.7028C23.4747 40.109 24.5238 40.109 25.2578 40.7028C26.8633 41.9829 29.0118 42.3535 30.9534 41.6852C32.895 41.0169 34.3602 39.4025 34.8377 37.4054C35.0076 36.6291 35.6154 36.0236 36.3924 35.8568C38.677 35.3929 40.5808 33.8226 41.4711 31.6681C42.3613 29.5137 42.1211 27.0575 40.8303 25.1163C40.3673 24.4367 40.3673 23.543 40.8303 22.8634C42.1211 20.9222 42.3613 18.466 41.4711 16.3115C40.5808 14.157 38.677 12.5868 36.3924 12.1229C35.6154 11.9561 35.0076 11.3506 34.8377 10.5742C34.355 8.58063 32.8876 6.97154 30.9468 6.3076C29.006 5.64363 26.8605 6.01672 25.2578 7.29686V7.3069Z"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M24 7.74902V40.2485"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M30 32.0036C30 29.7935 31.7916 28.002 34.0017 28.002"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M17.9978 15.9971C17.9978 18.2071 16.2061 19.9987 13.9961 19.9987"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M17.9978 32.0036C17.9978 29.7935 16.2061 28.002 13.9961 28.002"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M30 15.9971C30 18.2071 31.7916 19.9987 34.0017 19.9987"/></svg>`,
+    immunity: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48"><g><path fill="currentColor" d="M22.5 15L22.211 15.0138C20.6898 15.1591 19.5 16.4406 19.5 18V19.5H18C16.3432 19.5 15 20.8432 15 22.5V25.5L15.0138 25.789C15.1591 27.3102 16.4406 28.5 18 28.5H19.5V30C19.5 31.6568 20.8432 33 22.5 33H25.5L25.789 32.9862C27.3102 32.8408 28.5 31.5594 28.5 30V28.5H30C31.6568 28.5 33 27.1568 33 25.5V22.5L32.9862 22.211C32.8408 20.6898 31.5594 19.5 30 19.5H28.5V18C28.5 16.3432 27.1568 15 25.5 15H22.5ZM22.5 18H25.5V21C25.5 21.8284 26.1716 22.5 27 22.5H30V25.5H27C26.1716 25.5 25.5 26.1716 25.5 27V30H22.5V27C22.5 26.1716 21.8284 25.5 21 25.5H18V22.5H21C21.8284 22.5 22.5 21.8284 22.5 21V18Z"/><path fill="currentColor" d="M22.3602 4.75012L9.36026 8.81049C7.06374 9.52774 5.5 11.6544 5.5 14.0604V21.534C5.5 30.8048 11.1298 39.1228 19.6845 42.5882L20.319 42.8344C22.6934 43.7226 25.3088 43.7218 27.6824 42.8322L27.7312 42.814C36.6144 39.4848 42.5 30.9938 42.5 21.5072V14.0605C42.5 11.6545 40.9362 9.52787 38.6398 8.81056L25.6398 4.75012C24.572 4.41663 23.428 4.41663 22.3602 4.75012ZM24.7454 7.61369L37.7454 11.6742C38.7892 12.0002 39.5 12.9668 39.5 14.0605V21.5072C39.5 29.5514 34.6252 36.7712 27.2122 39.7958L26.6296 40.023C25.0882 40.6006 23.4042 40.6536 21.8368 40.182L21.3102 40.0022C13.606 37.1206 8.49997 29.7594 8.49997 21.534V14.0604C8.49997 12.9667 9.21082 12.0001 10.2547 11.674L23.2546 7.61369C23.74 7.46208 24.26 7.46208 24.7454 7.61369Z"/></g></svg>`,
+    taste: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M24 6 L27.5 19 L40.5 22.5 L27.5 26 L24 39 L20.5 26 L7.5 22.5 L20.5 19 Z"/><path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor" d="M37.5 7 L38.7 10.8 L42.5 12 L38.7 13.2 L37.5 17 L36.3 13.2 L32.5 12 L36.3 10.8 Z"/></svg>`,
+  };
+  const INGREDIENT_LABELS = {
+    veggies: "Veggies", fruits: "Fruits",
+    vitamins: "Vitamins", herbs: "Herbs", antioxidants: "Antioxidants",
+    prebiotics: "Prebiotics",
+    adaptogens: "Adaptogens", mushrooms: "Mushrooms",
+    strawberry: "Strawberry", sweetgreens: "Sweet Greens", fresh: "Fresh",
+  };
+  const MIN_SPAWN_DISTANCE = 460; // px between any two consecutive spawned objects
+  const SPAWN_DISTANCE_JITTER = 120; // extra random px between spawns
+  const INGREDIENT_HEIGHT = 120; // fixed height (bottom of ingredient) above ground line
+
+  const game = {
+    running: false,
+    bear: { x: 160, y: GROUND_Y - 110, w: 89, h: 110, vy: 0, jumps: 0, onGround: true, runFrame: 0, squashTimer: 0 },
+    speed: 8.0,
+    speedMax: 11,
+    elapsed: 0,
+    score: 0,
+    spawnDistance: 240, // px until next spawn
+    nextSpawnType: "ing", // strict alternation: always start with ingredient
+    items: [],         // {type:'ing'|'rock', x, y, w, h, ing?, bobPhase}
+    flyers: [],        // emoji flying from catch position to HUD pill
+    particles: [],
+    bgScroll: 0,
+    midScroll: 0,
+    groundScroll: 0,
+    caught: new Set(),
+    benefitCaught: { gut: new Set(), immunity: new Set(), brain: new Set(), energy: new Set(), taste: new Set() },
+    benefits: { gut:false, immunity:false, brain:false, energy:false, taste:false },
+    activeIndex: 0,
+    lastTs: 0,
+  };
+
+  function startGame() {
+    game.running = true;
+    game.bear.y = GROUND_Y - game.bear.h;
+    game.bear.vy = 0;
+    game.bear.jumps = 0;
+    game.bear.onGround = true;
+    game.speed = 8.0;
+    game.elapsed = 0;
+    game.score = 0;
+    game.spawnDistance = 240;
+    game.nextSpawnType = "ing";
+    game.items = [];
+    game.flyers = [];
+    game.particles = [];
+    game.caught = new Set();
+    game.benefitCaught = { gut: new Set(), immunity: new Set(), brain: new Set(), energy: new Set(), taste: new Set() };
+    game.benefits = { gut:false, immunity:false, brain:false, energy:false, taste:false };
+    game.activeIndex = 0;
+    rebuildBenefitTracker();
+    refreshTrackerStates();
+    refreshIngredientStrip();
+    document.getElementById("score").textContent = "Score: 0";
+    show("game");
+    game.lastTs = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function jump() {
+    if (!game.running) return;
+    if (game.bear.jumps < 2) {
+      game.bear.vy = -17;
+      game.bear.onGround = false;
+      game.bear.jumps += 1;
+    }
+  }
+
+  // input
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (!game.running && screenEls.start.classList.contains("active")) {
+        show("mission"); return;
+      }
+      if (!game.running && screenEls.mission.classList.contains("active")) {
+        startGame(); return;
+      }
+      jump();
+    }
+  });
+  // tap on game canvas only triggers jump
+  canvas.addEventListener("pointerdown", () => jump());
+
+  // ===== Spawning =====
+  function spawnIngredient() {
+    // Only spawn ingredients for the currently active benefit, and only ones not yet caught.
+    const bk = activeBenefit();
+    if (!bk) return false;
+    const req = BENEFIT_REQS[bk];
+    const remaining = req.keys.filter(k => !game.benefitCaught[bk].has(k));
+    if (remaining.length === 0) return false;
+    // Avoid spawning a duplicate of an ingredient already in flight on screen, when possible.
+    const onScreen = new Set();
+    for (const it of game.items) if (it.type === "ing") onScreen.add(it.ing.key);
+    const fresh = remaining.filter(k => !onScreen.has(k));
+    const pool = fresh.length > 0 ? fresh : remaining;
+    const ingKey = pool[Math.floor(Math.random() * pool.length)];
+    const ing = INGREDIENTS.find(i => i.key === ingKey);
+    if (!ing) return false;
+    const size = 42;
+    const y = GROUND_Y - INGREDIENT_HEIGHT - size;
+    game.items.push({
+      type: "ing", ing,
+      x: W + 20, y, w: size, h: size,
+      bobPhase: Math.random() * Math.PI * 2,
+    });
+    return true;
+  }
+  function spawnRock() {
+    // Randomly alternate between two overlapping pills and a vitamin bottle.
+    const isPills = Math.random() < 0.5;
+    let w, h;
+    if (isPills) {
+      w = 50;
+      h = 26;
+    } else {
+      w = 36;
+      h = 50;
+    }
+    game.items.push({
+      type: "rock",
+      subtype: isPills ? "pills" : "bottle",
+      x: W + 20, y: GROUND_Y - h + 5, w, h,
+    });
+  }
+
+  function spawnParticles(x, y, color) {
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 1 + Math.random() * 3.5;
+      game.particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 1,
+        life: 30 + Math.random() * 20,
+        age: 0,
+        color,
+        size: 2 + Math.random() * 2.5,
+      });
+    }
+  }
+
+  // ===== Benefit logic =====
+  function recomputeBenefits() {
+    for (const bk of Object.keys(BENEFIT_REQS)) {
+      game.benefits[bk] = game.benefitCaught[bk].size >= BENEFIT_REQS[bk].total;
+    }
+  }
+  function updatePillsHUD(container) {
+    for (const bk of Object.keys(BENEFIT_REQS)) {
+      const pill = container.querySelector(`[data-benefit="${bk}"]`);
+      if (!pill) continue;
+      const total = BENEFIT_REQS[bk].total;
+      const got = game.benefitCaught[bk].size;
+      const lit = !!game.benefits[bk];
+      pill.classList.toggle("lit", lit);
+      const counter = pill.querySelector(".count");
+      if (counter) {
+        if (total > 1 && !lit && got > 0) {
+          counter.textContent = `${got}/${total}`;
+          counter.classList.add("show");
+        } else {
+          counter.textContent = "";
+          counter.classList.remove("show");
+        }
+      }
+    }
+  }
+  function bumpSlot(bk) {
+    const slot = document.querySelector(`#benefit-tracker .slot[data-benefit="${bk}"]`);
+    if (!slot) return;
+    slot.classList.remove("bump");
+    void slot.offsetWidth;
+    slot.classList.add("bump");
+    setTimeout(() => slot.classList.remove("bump"), 380);
+  }
+  function allBenefitsUnlocked() {
+    return game.benefits.gut && game.benefits.immunity && game.benefits.brain && game.benefits.energy && game.benefits.taste;
+  }
+
+  // ===== Active benefit + HUD rendering =====
+  function activeBenefit() {
+    return BENEFIT_ORDER[game.activeIndex] || null;
+  }
+  function rebuildBenefitTracker() {
+    const tracker = document.getElementById("benefit-tracker");
+    if (!tracker) return;
+    tracker.innerHTML = "";
+    for (const bk of BENEFIT_ORDER) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.dataset.benefit = bk;
+      slot.innerHTML = `
+        <div class="slot-icon">${BENEFIT_ICONS[bk]}</div>
+        <div class="slot-name">${BENEFIT_LABELS[bk]}</div>
+        <div class="check">★</div>`;
+      tracker.appendChild(slot);
+    }
+  }
+  function refreshTrackerStates() {
+    const slots = document.querySelectorAll("#benefit-tracker .slot");
+    slots.forEach((slot, idx) => {
+      slot.classList.remove("active", "done");
+      if (idx < game.activeIndex) slot.classList.add("done");
+      else if (idx === game.activeIndex) slot.classList.add("active");
+    });
+  }
+  function renderOverBenefits() {
+    const container = document.getElementById("over-benefits");
+    if (!container) return;
+    container.innerHTML = "";
+    for (const bk of BENEFIT_ORDER) {
+      const completed = !!game.benefits[bk];
+      const item = document.createElement("div");
+      item.className = "ob-item" + (completed ? " done" : "");
+      item.innerHTML = `<div class="ob-icon">${BENEFIT_ICONS[bk]}</div><div class="ob-star">★</div>`;
+      container.appendChild(item);
+    }
+  }
+  function renderWinBenefits() {
+    const container = document.getElementById("win-benefits");
+    if (!container) return;
+    container.innerHTML = "";
+    for (const bk of BENEFIT_ORDER) {
+      const item = document.createElement("div");
+      item.className = "wb-item";
+      item.innerHTML = `<div class="wb-icon">${BENEFIT_ICONS[bk]}<span class="wb-star">★</span></div><div class="wb-name">${BENEFIT_LABELS[bk]}</div>`;
+      container.appendChild(item);
+    }
+  }
+  function refreshIngredientStrip() {
+    const strip = document.getElementById("ingredient-strip");
+    if (!strip) return;
+    strip.innerHTML = "";
+    const bk = activeBenefit();
+    if (!bk) return;
+    const req = BENEFIT_REQS[bk];
+    for (const ingKey of req.keys) {
+      if (game.benefitCaught[bk].has(ingKey)) continue;
+      const ing = INGREDIENTS.find(i => i.key === ingKey);
+      if (!ing) continue;
+      const el = document.createElement("div");
+      el.className = "ing-target";
+      el.dataset.ing = ingKey;
+      el.innerHTML = `<div class="circle">${ing.emoji}</div><span class="ing-name">${INGREDIENT_LABELS[ingKey] || ingKey}</span>`;
+      strip.appendChild(el);
+    }
+  }
+
+  // ===== Flyers (caught ingredient → active benefit slot) =====
+  function getPillCanvasPos(benefitKey) {
+    const slot = document.querySelector(`#benefit-tracker .slot[data-benefit="${benefitKey}"]`);
+    if (!slot) return { x: W/2, y: 30 };
+    const cRect = canvas.getBoundingClientRect();
+    const pRect = slot.getBoundingClientRect();
+    const sx = W / cRect.width;
+    const sy = H / cRect.height;
+    return {
+      x: (pRect.left + pRect.width/2 - cRect.left) * sx,
+      y: (pRect.top + pRect.height/2 - cRect.top) * sy,
+    };
+  }
+  function spawnFlyer(emoji, fromX, fromY, benefitKey, ingredientKey) {
+    const target = getPillCanvasPos(benefitKey);
+    game.flyers.push({
+      emoji, ingredientKey, benefitKey,
+      sx: fromX, sy: fromY,
+      ex: target.x, ey: target.y,
+      cx: (fromX + target.x) / 2,
+      cy: Math.min(fromY, target.y) - 70,
+      t: 0, dur: 34, landed: false,
+    });
+  }
+  function updateFlyers() {
+    for (const f of game.flyers) {
+      if (f.landed) { f.t += 1; continue; }
+      f.t += 1;
+      if (f.t >= f.dur) {
+        f.landed = true;
+        onFlyerLanded(f);
+      }
+    }
+    game.flyers = game.flyers.filter(f => !(f.landed && f.t > f.dur + 6));
+  }
+  function drawFlyers() {
+    for (const f of game.flyers) {
+      if (f.landed) continue;
+      const t = Math.min(1, f.t / f.dur);
+      const it = 1 - t;
+      const x = it*it*f.sx + 2*it*t*f.cx + t*t*f.ex;
+      const y = it*it*f.sy + 2*it*t*f.cy + t*t*f.ey;
+      const size = 26 - t * 10;
+      ctx.font = `${size}px 'Apple Color Emoji','Segoe UI Emoji',sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(f.emoji, x, y);
+    }
+  }
+  function onFlyerLanded(f) {
+    game.benefitCaught[f.benefitKey].add(f.ingredientKey);
+    const wasUnlocked = game.benefits[f.benefitKey];
+    recomputeBenefits();
+    bumpSlot(f.benefitKey);
+    if (!wasUnlocked && game.benefits[f.benefitKey]) {
+      // Benefit just unlocked — remove any of its ingredients still on screen.
+      for (const it of game.items) {
+        if (it.type === "ing" && INGREDIENT_TO_BENEFIT[it.ing.key] === f.benefitKey) {
+          it.dead = true;
+        }
+      }
+      // Advance to the next benefit in the tracker.
+      game.activeIndex += 1;
+      refreshTrackerStates();
+      // Celebratory popup over the play area
+      showBenefitUnlockPopup(f.benefitKey);
+    }
+    refreshIngredientStrip();
+    if (allBenefitsUnlocked()) {
+      // Freeze the scene immediately so nothing collides during the celebration,
+      // but defer the congrats popup until after the final unlock pop has played.
+      game.running = false;
+      setTimeout(() => endGame(true), 1400);
+    }
+  }
+  function showBenefitUnlockPopup(benefitKey) {
+    const popup = document.getElementById("unlock-popup");
+    if (!popup) return;
+    const iconEl = popup.querySelector(".unlock-icon");
+    const nameEl = popup.querySelector(".unlock-name");
+    if (iconEl) iconEl.innerHTML = BENEFIT_ICONS[benefitKey] || "";
+    if (nameEl) nameEl.textContent = `${BENEFIT_LABELS[benefitKey] || ""} Unlocked!`;
+    // Restart the animation if it's already running
+    popup.classList.remove("show");
+    void popup.offsetWidth;
+    popup.classList.add("show");
+  }
+
+  // ===== Drawing =====
+  function drawBackground() {
+    // sky (above ground line)
+    ctx.fillStyle = "#DAECE3";
+    ctx.fillRect(0, 0, W, GROUND_Y);
+
+    // ground band between ground line and the brown earth layer
+    ctx.fillStyle = "#FFF3CB";
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y - EARTH_H);
+
+    // brown earth layer at the very bottom
+    ctx.fillStyle = "#6B5613";
+    ctx.fillRect(0, H - EARTH_H, W, EARTH_H);
+
+    // soil texture — scattered darker brown specks scrolling with the world
+    ctx.fillStyle = "#5a4a10";
+    const eOff = ((game.groundScroll % 20) + 20) % 20;
+    for (let x = -eOff; x < W; x += 20) {
+      ctx.fillRect(x, H - EARTH_H + 6, 2, 2);
+    }
+    const eOff2 = ((game.groundScroll % 28) + 28) % 28;
+    for (let x = -eOff2 + 10; x < W; x += 28) {
+      ctx.fillRect(x, H - EARTH_H + 13, 3, 1);
+    }
+
+    // thin ground line — flat solid, no texture
+    ctx.fillStyle = "#2d7a45";
+    ctx.fillRect(0, GROUND_Y, W, 3);
+  }
+
+  const RUNNER_IMG = new Image();
+  RUNNER_IMG.src = "icons/runner.png";
+
+  // Static plus-symbol sky texture — generated once, never moves.
+  const SKY_PLUSES = (() => {
+    const positions = [];
+    const maxY = GROUND_Y * 0.6;
+    const stepX = 60;
+    const stepY = 50;
+    for (let gy = 18; gy < maxY; gy += stepY) {
+      for (let gx = 24; gx < W; gx += stepX) {
+        const x = gx + (Math.random() - 0.5) * 32;
+        const y = gy + (Math.random() - 0.5) * 30;
+        positions.push({ x, y });
+      }
+    }
+    return positions;
+  })();
+  // Static rolling hills filling the bottom of the play area.
+  function drawHills() {
+    // Taller, more prominent warm-yellow bumps
+    ctx.fillStyle = "#FFF3CB";
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(0, GROUND_Y - 30);
+    ctx.quadraticCurveTo( 80, GROUND_Y - 130, 180, GROUND_Y - 35);
+    ctx.quadraticCurveTo(260, GROUND_Y - 15,  340, GROUND_Y - 45);
+    ctx.quadraticCurveTo(460, GROUND_Y - 115, 580, GROUND_Y - 30);
+    ctx.quadraticCurveTo(660, GROUND_Y - 18,  740, GROUND_Y - 40);
+    ctx.quadraticCurveTo(800, GROUND_Y - 105, W,   GROUND_Y - 35);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawSkyTexture() {
+    ctx.fillStyle = "rgba(249, 116, 130, 0.15)";
+    ctx.font = "10px 'Work Sans', system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const p of SKY_PLUSES) {
+      ctx.fillText("✦", p.x, p.y);
+    }
+  }
+
+  // Vertical padding inside runner.png between the visible feet and the image's bottom edge.
+  // Tuned so the character's feet sit exactly on the ground line — increase if feet still float, decrease if they sink.
+  const RUNNER_FOOT_PADDING = 14;
+
+  function drawBear() {
+    const b = game.bear;
+    const x = b.x, y = b.y;
+
+    // runner image — character feet always sit exactly on the ground line.
+    // When on ground: visible feet at GROUND_Y. When in air: image follows the bear's vertical position.
+    const imgH = 110;
+    const ratio = (RUNNER_IMG.naturalWidth && RUNNER_IMG.naturalHeight)
+      ? RUNNER_IMG.naturalWidth / RUNNER_IMG.naturalHeight
+      : 0.8;
+    const imgW = imgH * ratio;
+    const baseY = b.onGround ? GROUND_Y : (y + b.h);
+
+    // Anchor at the bottom-center where the visible feet land — used as the transform origin.
+    const anchorX = x + b.w / 2;
+    const anchorY = baseY + RUNNER_FOOT_PADDING;
+
+    // Subtle running animation: gentle lift bob + tiny side-to-side rotation while on ground.
+    // Paused entirely while airborne so jumps stay clean.
+    let bob = 0;
+    let rotation = 0;
+    if (b.onGround && (b.squashTimer | 0) === 0) {
+      const phase = b.runFrame * 0.2;
+      bob = -Math.abs(Math.sin(phase)) * 1.5;          // lifts up to 1.5px (never below the ground line)
+      rotation = Math.sin(phase) * (2 * Math.PI / 180); // ±2° wobble
+    }
+
+    // Brief landing squash when returning to the ground.
+    let scaleX = 1, scaleY = 1;
+    if (b.squashTimer > 0) {
+      const t = b.squashTimer / 6;       // 1 → 0
+      scaleY = 1 - 0.08 * t;             // squashes vertically
+      scaleX = 1 + 0.05 * t;             // bulges horizontally
+    }
+
+    if (RUNNER_IMG.complete && RUNNER_IMG.naturalWidth > 0) {
+      ctx.save();
+      ctx.translate(anchorX, anchorY + bob);
+      ctx.rotate(rotation);
+      ctx.scale(scaleX, scaleY);
+      ctx.drawImage(RUNNER_IMG, -imgW / 2, -imgH, imgW, imgH);
+      ctx.restore();
+    }
+  }
+
+  function drawIngredient(it) {
+    const cx = it.x + it.w/2;
+    const bob = Math.sin((game.elapsed * 0.1) + it.bobPhase) * 3;
+    const cy = it.y + it.h/2 + bob;
+
+    // bubble — solid flat fill with soft green drop shadow
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 126, 64, 0.16)";
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = "#FFF3CB";
+    ctx.beginPath();
+    ctx.arc(cx, cy, it.w/2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // emoji
+    ctx.font = "22px 'Apple Color Emoji','Segoe UI Emoji',sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(it.ing.emoji, cx, cy + 1);
+  }
+
+  function drawRock(it) {
+    if (it.subtype === "bottle") drawBottle(it);
+    else drawPills(it);
+  }
+
+  function _capsulePath(cx, cy, capW, capH) {
+    const r = capH / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - capW/2 + r, cy - capH/2);
+    ctx.lineTo(cx + capW/2 - r, cy - capH/2);
+    ctx.arc(cx + capW/2 - r, cy, r, -Math.PI/2, Math.PI/2, false);
+    ctx.lineTo(cx - capW/2 + r, cy + capH/2);
+    ctx.arc(cx - capW/2 + r, cy, r, Math.PI/2, Math.PI*3/2, false);
+    ctx.closePath();
+  }
+
+  function drawPills(it) {
+    // Simple closed capsule pill — horizontal oval, white fill, black outline,
+    // with a vertical line down the middle marking the two halves.
+    const x = it.x, y = it.y, w = it.w, h = it.h;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#000000";
+    ctx.fillStyle = "#ffffff";
+
+    _capsulePath(cx, cy, w, h);
+    ctx.fill();
+    ctx.stroke();
+
+    // central split line
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 1);
+    ctx.lineTo(cx, y + h - 1);
+    ctx.stroke();
+  }
+
+  function drawBottle(it) {
+    // Simple supplement bottle — cap, body, and label.
+    const x = it.x, y = it.y, w = it.w, h = it.h;
+
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#000000";
+    ctx.fillStyle = "#ffffff";
+
+    // Cap — slightly inset, sits at the top
+    const capH = Math.max(8, h * 0.18);
+    const capInset = Math.max(2, w * 0.12);
+    const capX = x + capInset;
+    const capW = w - capInset * 2;
+    const capR = 2;
+    ctx.beginPath();
+    ctx.moveTo(capX + capR, y);
+    ctx.lineTo(capX + capW - capR, y);
+    ctx.quadraticCurveTo(capX + capW, y, capX + capW, y + capR);
+    ctx.lineTo(capX + capW, y + capH);
+    ctx.lineTo(capX, y + capH);
+    ctx.lineTo(capX, y + capR);
+    ctx.quadraticCurveTo(capX, y, capX + capR, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Cap grooves — a few short vertical lines for grip texture
+    ctx.lineWidth = 1;
+    const grooveTop = y + 2;
+    const grooveBot = y + capH - 2;
+    for (let i = 1; i <= 3; i++) {
+      const gx = capX + (capW / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(gx, grooveTop);
+      ctx.lineTo(gx, grooveBot);
+      ctx.stroke();
+    }
+
+    // Body — rounded rectangle below the cap
+    ctx.lineWidth = 2;
+    const bodyTop = y + capH;
+    const bodyH = h - capH;
+    const bodyR = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + bodyR, bodyTop);
+    ctx.lineTo(x + w - bodyR, bodyTop);
+    ctx.quadraticCurveTo(x + w, bodyTop, x + w, bodyTop + bodyR);
+    ctx.lineTo(x + w, y + h - bodyR);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - bodyR, y + h);
+    ctx.lineTo(x + bodyR, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - bodyR);
+    ctx.lineTo(x, bodyTop + bodyR);
+    ctx.quadraticCurveTo(x, bodyTop, x + bodyR, bodyTop);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Label — simple rectangle on the body
+    const labelX = x + w * 0.14;
+    const labelW = w * 0.72;
+    const labelY = bodyTop + bodyH * 0.22;
+    const labelH = bodyH * 0.42;
+    ctx.beginPath();
+    ctx.rect(labelX, labelY, labelW, labelH);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  function drawParticles() {
+    for (const p of game.particles) {
+      const alpha = Math.max(0, 1 - p.age / p.life);
+      ctx.fillStyle = p.color.replace(")", `,${alpha})`).replace("rgb(", "rgba(");
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function roundRect(x, y, w, h, r, fill) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    if (fill) ctx.fill();
+  }
+
+  // ===== Update =====
+  function update(dt) {
+    game.elapsed += 1;
+    game.speed = 8.0;
+
+    // scroll bg
+    game.bgScroll += game.speed * 0.4;
+    game.midScroll += game.speed * 0.9;
+    game.groundScroll += game.speed;
+
+    // bear physics
+    const b = game.bear;
+    const wasAirborne = !b.onGround;
+    b.vy += 1.2; // gravity
+    b.y += b.vy;
+    if (b.y + b.h >= GROUND_Y) {
+      b.y = GROUND_Y - b.h;
+      b.vy = 0;
+      b.onGround = true;
+      b.jumps = 0;
+      if (wasAirborne) b.squashTimer = 6; // brief landing squash
+    } else {
+      b.onGround = false;
+    }
+    if (b.squashTimer > 0) b.squashTimer -= 1;
+    if (b.onGround) b.runFrame += 1;
+
+    // spawn — strict alternation: ingredient → rock → ingredient → rock …
+    game.spawnDistance -= game.speed;
+    if (game.spawnDistance <= 0) {
+      let spawned = false;
+      if (game.nextSpawnType === "ing") {
+        spawned = spawnIngredient();
+      } else {
+        spawnRock();
+        spawned = true;
+      }
+      if (spawned) {
+        game.nextSpawnType = (game.nextSpawnType === "ing") ? "rock" : "ing";
+        game.spawnDistance = MIN_SPAWN_DISTANCE + Math.random() * SPAWN_DISTANCE_JITTER;
+      } else {
+        // Couldn't spawn an ingredient (no active benefit / all caught) — try again shortly without breaking alternation.
+        game.spawnDistance = 80;
+      }
+    }
+
+    // move items, collide
+    for (const it of game.items) it.x -= game.speed;
+
+    // collision detection
+    const bx = b.x + 6, by = b.y + 8, bw = b.w - 12, bh = b.h - 12;
+    for (const it of game.items) {
+      if (it.dead) continue;
+      const ix = it.x, iy = it.y, iw = it.w, ih = it.h;
+      const hit = bx < ix + iw && bx + bw > ix && by < iy + ih && by + bh > iy;
+      if (!hit) continue;
+      if (it.type === "ing") {
+        it.dead = true;
+        game.score += 10;
+        document.getElementById("score").textContent = `Score: ${game.score}`;
+        spawnParticles(it.x + it.w/2, it.y + it.h/2, "rgb(255,210,0)");
+        const benefitKey = INGREDIENT_TO_BENEFIT[it.ing.key];
+        if (benefitKey && !game.benefitCaught[benefitKey].has(it.ing.key)) {
+          spawnFlyer(it.ing.emoji, it.x + it.w/2, it.y + it.h/2, benefitKey, it.ing.key);
+        }
+        game.caught.add(it.ing.key);
+      } else if (it.type === "rock") {
+        endGame(false);
+        return;
+      }
+    }
+
+    // remove dead/offscreen
+    game.items = game.items.filter(it => !it.dead && it.x + it.w > -20);
+
+    // particles
+    for (const p of game.particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.2;
+      p.age += 1;
+    }
+    game.particles = game.particles.filter(p => p.age < p.life);
+
+    // flyers (caught emoji → HUD pill)
+    updateFlyers();
+
+    // passive score
+    if (game.elapsed % 6 === 0) {
+      game.score += 1;
+      document.getElementById("score").textContent = `Score: ${game.score}`;
+    }
+  }
+
+  function endGame(won) {
+    game.running = false;
+    if (won) {
+      renderWinBenefits();
+      show("win");
+    } else {
+      // render game-over with current benefits
+      show("over");
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    for (const it of game.items) {
+      if (it.type === "ing") drawIngredient(it);
+      else drawRock(it);
+    }
+    drawBear();
+    drawParticles();
+    drawFlyers();
+  }
+
+  function loop(ts) {
+    const dt = Math.min(33, ts - game.lastTs);
+    game.lastTs = ts;
+    if (game.running) {
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+  }
+
+  // ===== Confetti =====
+  const confettiCanvas = document.getElementById("confettiCanvas");
+  const cctx = confettiCanvas.getContext("2d");
+  let confettiPieces = [];
+  let confettiRunning = false;
+  function fireConfetti() {
+    confettiPieces = [];
+    for (let i = 0; i < 140; i++) {
+      confettiPieces.push({
+        x: Math.random() * 840,
+        y: -20 - Math.random() * 200,
+        vx: (Math.random() - 0.5) * 2,
+        vy: 2 + Math.random() * 3.5,
+        size: 5 + Math.random() * 6,
+        color: Math.random() < 0.5 ? "#2d7a45" : "#FFD200",
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.2,
+      });
+    }
+    confettiRunning = true;
+    requestAnimationFrame(confettiTick);
+  }
+  function stopConfetti() {
+    confettiRunning = false;
+    cctx.clearRect(0, 0, 840, 460);
+  }
+  function confettiTick() {
+    if (!confettiRunning) return;
+    cctx.clearRect(0, 0, 840, 460);
+    for (const p of confettiPieces) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.04;
+      p.rot += p.vr;
+      cctx.save();
+      cctx.translate(p.x, p.y);
+      cctx.rotate(p.rot);
+      cctx.fillStyle = p.color;
+      cctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+      cctx.restore();
+    }
+    confettiPieces = confettiPieces.filter(p => p.y < 500);
+    if (confettiPieces.length > 0) requestAnimationFrame(confettiTick);
+    else confettiRunning = false;
+  }
+
+  // Kick off the preview loop so the live runner renders behind the start screen overlay.
+  if (RUNNER_IMG.complete) startPreviewLoop();
+  else RUNNER_IMG.addEventListener("load", startPreviewLoop, { once: true });
+  startPreviewLoop();
+
+})();
+</script>
+
+</body>
+</html>
